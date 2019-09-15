@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-controller
+  labels:
+    app: admission-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admission-controller
+  template:
+    metadata:
+      labels:
+        app: admission-controller
+    spec:
+      containers:
+      - name: admission-controller
+        image: localhost:5000/test
+        imagePullPolicy: Always
+        ports:
+        - name: webhook-api
+          containerPort: 8443
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-controller
+spec:
+  selector:
+    app: admission-controller
+  ports:
+    - port: 443
+      targetPort: webhook-api
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: admission-controller
+webhooks:
+  - name: admission-controller.default.svc
+    admissionReviewVersions: ["v1beta1"]
+    failurePolicy: Fail
+    namespaceSelector:
+      matchLabels:
+        namespace: example
+    clientConfig:
+      service:
+        name: admission-controller
+        namespace: default
+        path: "/inject-localtime"
+      caBundle: |
+        LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUROekNDQWgrZ0F3SUJBZ0lVRmF5alZja2xl
+        eUxDRCsxZHBLa1c5UmZRQzBVd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0t6RXBNQ2NHQTFVRUF3d2dZ
+        V1J0YVhOemFXOXVMV052Ym5SeWIyeHNaWEl1WkdWbVlYVnNkQzV6ZG1NdwpIaGNOTVRrd09URTBN
+        akV5TnpRd1doY05ORGN3TVRJNU1qRXlOelF3V2pBck1Ta3dKd1lEVlFRRERDQmhaRzFwCmMzTnBi
+        MjR0WTI5dWRISnZiR3hsY2k1a1pXWmhkV3gwTG5OMll6Q0NBU0l3RFFZSktvWklodmNOQVFFQkJR
+        QUQKZ2dFUEFEQ0NBUW9DZ2dFQkFNU2hpaFdXeWMxZzU2aURJenFLWW42QWpOWHNHOUl2dkU3Vjhk
+        a3pOd1pKTWtUQQphVXFJQitJQndRVUpVeWNiajhENHQ1UUc0RnM1VGdXNE9SRFZyTThYTk53ZzJ5
+        YWpqblFjcVRoM0VaN2lHOUVDClNVK2p2N1VxR3pJM0Q5WlZ1bm9kSXZoaSt4ME9aemtjT0tTNVJT
+        M1JwNFpuTU1OZjBrWHZRS1VWYXhkZDlRbU8KajEzOS95b3p4c0ZKNFlzTnM5cFVDSFFMZkkwcnVy
+        NWY3TDlqdWlUSytLSW1QcHlXUkZ1aW92NUtOT1FHeWVxRQpEcFdwcUJsR21XcWIzTXNMTURnRU0w
+        OVhjQ21NYXlUZzRyTXBwSDBTcDZqbUZlN1Eycm9ibVVIU2E1Q3UwbXBWClBMV002ZUEyWW1hVW5C
+        cVl0SWdoaDl5VjJFYVNma3pTOXVyOGtZa0NBd0VBQWFOVE1GRXdIUVlEVlIwT0JCWUUKRk1hcHYz
+        UnNiZkxPZkxBVFpxc0VDL0N2R05LNk1COEdBMVVkSXdRWU1CYUFGTWFwdjNSc2JmTE9mTEFUWnFz
+        RQpDL0N2R05LNk1BOEdBMVVkRXdFQi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dF
+        QkFMK29QaXRhCmdZRS84RXFyRSsxZ2pFYkFoVXlNdkNLVTZOa3BPZjh1ZThKZUdlMXlRQmlNT3k5
+        WnFKQU5MMHFnRWJJNkZEUlEKN0tIVTFPQ0VSNmIvUEc2QldaYWtndTNRaWRmVkhtUjhxd2Y3TEpX
+        SUhOZW9ud3hhMmluVTI3ZUxHc3dJV0M4SwpvZ1ErMmo5ZzlCTmdTM2ZOT0xmMWxJdjlMTDczRUxw
+        OXRpSmlUNDdIVTU0VVdrMEtCeTRSQkV4L0V4UDNPOCtxClJKWHc1cmdFWUtlYThqNHVIRWFzSk4y
+        MC9OOUxLMEtBMGUyL0kvNTFtQ29YSDhHckE3cDhYYWs1d3BQL2FmYmcKWFRKYTRBaWg0aTJlTXRH
+        SURvaDFQU1pIQ1dJMlVqdktlNkZwYzI1UUN3dXN5V1FaNlU2MlFDU3NUdUJSRE1QYQpkRGpEZ0Fq
+        QzlrdFdVaUk9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    rules:
+      - operations: [ "CREATE" ]
+        apiGroups: ["apps", ""]
+        apiVersions: ["v1"]
+        resources: ["deployments", "pods"]
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: admission-controller
+webhooks:
+  - name: admission-controller.default.svc
+    admissionReviewVersions: ["v1beta1"]
+    failurePolicy: Fail
+    namespaceSelector:
+      matchLabels:
+        namespace: example
+    clientConfig:
+      service:
+        name: admission-controller
+        namespace: default
+        path: "/image-not-latest"
+      caBundle: |
+        LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUROekNDQWgrZ0F3SUJBZ0lVRmF5alZja2xl
+        eUxDRCsxZHBLa1c5UmZRQzBVd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0t6RXBNQ2NHQTFVRUF3d2dZ
+        V1J0YVhOemFXOXVMV052Ym5SeWIyeHNaWEl1WkdWbVlYVnNkQzV6ZG1NdwpIaGNOTVRrd09URTBN
+        akV5TnpRd1doY05ORGN3TVRJNU1qRXlOelF3V2pBck1Ta3dKd1lEVlFRRERDQmhaRzFwCmMzTnBi
+        MjR0WTI5dWRISnZiR3hsY2k1a1pXWmhkV3gwTG5OMll6Q0NBU0l3RFFZSktvWklodmNOQVFFQkJR
+        QUQKZ2dFUEFEQ0NBUW9DZ2dFQkFNU2hpaFdXeWMxZzU2aURJenFLWW42QWpOWHNHOUl2dkU3Vjhk
+        a3pOd1pKTWtUQQphVXFJQitJQndRVUpVeWNiajhENHQ1UUc0RnM1VGdXNE9SRFZyTThYTk53ZzJ5
+        YWpqblFjcVRoM0VaN2lHOUVDClNVK2p2N1VxR3pJM0Q5WlZ1bm9kSXZoaSt4ME9aemtjT0tTNVJT
+        M1JwNFpuTU1OZjBrWHZRS1VWYXhkZDlRbU8KajEzOS95b3p4c0ZKNFlzTnM5cFVDSFFMZkkwcnVy
+        NWY3TDlqdWlUSytLSW1QcHlXUkZ1aW92NUtOT1FHeWVxRQpEcFdwcUJsR21XcWIzTXNMTURnRU0w
+        OVhjQ21NYXlUZzRyTXBwSDBTcDZqbUZlN1Eycm9ibVVIU2E1Q3UwbXBWClBMV002ZUEyWW1hVW5C
+        cVl0SWdoaDl5VjJFYVNma3pTOXVyOGtZa0NBd0VBQWFOVE1GRXdIUVlEVlIwT0JCWUUKRk1hcHYz
+        UnNiZkxPZkxBVFpxc0VDL0N2R05LNk1COEdBMVVkSXdRWU1CYUFGTWFwdjNSc2JmTE9mTEFUWnFz
+        RQpDL0N2R05LNk1BOEdBMVVkRXdFQi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dF
+        QkFMK29QaXRhCmdZRS84RXFyRSsxZ2pFYkFoVXlNdkNLVTZOa3BPZjh1ZThKZUdlMXlRQmlNT3k5
+        WnFKQU5MMHFnRWJJNkZEUlEKN0tIVTFPQ0VSNmIvUEc2QldaYWtndTNRaWRmVkhtUjhxd2Y3TEpX
+        SUhOZW9ud3hhMmluVTI3ZUxHc3dJV0M4SwpvZ1ErMmo5ZzlCTmdTM2ZOT0xmMWxJdjlMTDczRUxw
+        OXRpSmlUNDdIVTU0VVdrMEtCeTRSQkV4L0V4UDNPOCtxClJKWHc1cmdFWUtlYThqNHVIRWFzSk4y
+        MC9OOUxLMEtBMGUyL0kvNTFtQ29YSDhHckE3cDhYYWs1d3BQL2FmYmcKWFRKYTRBaWg0aTJlTXRH
+        SURvaDFQU1pIQ1dJMlVqdktlNkZwYzI1UUN3dXN5V1FaNlU2MlFDU3NUdUJSRE1QYQpkRGpEZ0Fq
+        QzlrdFdVaUk9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    rules:
+    - operations: [ "CREATE", "UPDATE" ]
+      apiGroups: ["apps", ""]
+      apiVersions: ["v1"]
+      resources: ["deployments", "pods"]
